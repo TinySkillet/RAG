@@ -1,12 +1,20 @@
 import json
 from typing import Any, List
 from string import punctuation
+import os
 
 
 def load_json(json_path: str) -> Any:
     with open(json_path, "r") as f:
         t = json.load(f)
         return t
+
+
+def load_file(file_path: str) -> List[str]:
+    with open(file_path, "r") as f:
+        content = f.read()
+        lines = content.splitlines()
+        return lines
 
 
 def search_field(map_list: list[dict], field: str, query: str) -> List[dict]:
@@ -33,4 +41,12 @@ def remove_punctuation(value: str) -> str:
 
 def tokenize(value: str) -> List[str]:
     tokens = value.split()
-    return [token for token in tokens if token]
+    removed = remove_stop_words(tokens)
+    return removed
+
+
+def remove_stop_words(tokens: List[str]) -> List[str]:
+    STOP_WORDS_PATH = os.environ["STOP_WORDS"]
+    stop_words = load_file(STOP_WORDS_PATH)
+    filtered = [token for token in tokens if token and token not in stop_words]
+    return filtered
