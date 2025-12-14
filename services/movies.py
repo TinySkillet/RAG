@@ -1,4 +1,5 @@
 import json
+from nltk import PorterStemmer
 from typing import Any, List
 from string import punctuation
 import os
@@ -42,7 +43,8 @@ def remove_punctuation(value: str) -> str:
 def tokenize(value: str) -> List[str]:
     tokens = value.split()
     removed = remove_stop_words(tokens)
-    return removed
+    stemmed = stem(removed)
+    return stemmed
 
 
 def remove_stop_words(tokens: List[str]) -> List[str]:
@@ -50,3 +52,9 @@ def remove_stop_words(tokens: List[str]) -> List[str]:
     stop_words = load_file(STOP_WORDS_PATH)
     filtered = [token for token in tokens if token and token not in stop_words]
     return filtered
+
+
+def stem(tokens: List[str]) -> List[str]:
+    stemmer = PorterStemmer()
+    stemmed = [stemmer.stem(token) for token in tokens]
+    return stemmed
