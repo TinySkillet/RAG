@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import math
 from services.processing import search_field, tokenize
 from services.indexing import InvertedIndex
 
@@ -27,6 +26,10 @@ def main() -> None:
 
     idf_parser = subparsers.add_parser("idf", help="Search movies using IDF")
     idf_parser.add_argument("term", type=str, help="Term to search")
+
+    tfidf_parser = subparsers.add_parser("tfidf", help="Search movies using TFIDF")
+    tfidf_parser.add_argument("doc_id", type=int, help="Document id to search")
+    tfidf_parser.add_argument("term", type=str, help="Term to search")
 
     subparsers.add_parser("build", help="Build inverted indexes from movies list")
 
@@ -57,6 +60,22 @@ def main() -> None:
                 for n, doc in enumerate(matching_docs):
                     print(f"{n+1}. {doc['id']} {doc['title']}")
 
+        case "tfidf":
+            inverted_index = InvertedIndex()
+            try:
+                inverted_index.load()
+            except FileNotFoundError as e:
+                print("Error:", e)
+                exit(1)
+
+            tf = inverted_index.get_tf(doc_id=args.doc_id, term=args.term)
+            idf = inverted_index.get_idf(args.term)
+
+            tf_idf = tf * idf
+            print(
+                f"TF-IDF score of {args.term} in document {args.doc_id}: {tf_idf:.2f}"
+            )
+
         case "tf":
             inverted_index = InvertedIndex()
             try:
@@ -78,13 +97,7 @@ def main() -> None:
                 print("Error:", e)
                 exit(1)
 
-            tokens = tokenize(args.term)
-            if len(tokens) > 1:
-                raise ValueError("IDF can only be computed for a single token")
-
-            token = tokens[0]
-            n_matching_docs = len(inverted_index.get_documents(token))
-            idf = math.log((len(inverted_index.docmap) + 1) / (n_matching_docs + 1))
+            idf = inverted_index.get_idf(args.term)
             print(f"Inverse document frequency of {args.term}: {idf:.2f}")
 
         case "build":

@@ -4,6 +4,7 @@ from pickle import dump, load
 from dotenv import load_dotenv
 from collections import Counter
 import os
+import math
 
 load_dotenv()
 
@@ -44,11 +45,21 @@ class InvertedIndex:
     def get_tf(self, doc_id: int, term: str) -> int:
         tokens = tokenize(term)
         if len(tokens) > 1:
-            raise ValueError("Token must be a single word!")
+            raise ValueError("term must be a single word!")
 
         token = tokens[0]
         doc_counter = self.term_frequencies.get(doc_id, Counter())
         return doc_counter.get(token, 0)
+
+    def get_idf(self, term: str) -> int:
+        tokens = tokenize(term)
+        if len(tokens) > 1:
+            raise ValueError("term must be a single word!")
+
+        token = tokens[0]
+        n_matching_docs = len(self.get_documents(token))
+        idf = math.log((len(self.docmap) + 1) / (n_matching_docs + 1))
+        return idf
 
     def build(self):
         movies = load_movies()
