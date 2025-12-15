@@ -1,0 +1,71 @@
+from typing import Dict, List
+from services.processing import tokenize, load_movies
+from pickle import dump, load
+from dotenv import load_dotenv
+import os
+
+load_dotenv()
+
+cache_dir = os.environ["CACHE_DIR"]
+index_dir = f"{cache_dir}/index.pkl"
+docmap_dir = f"{cache_dir}/docmap.pkl"
+
+
+class InvertedIndex:
+    def __init__(self):
+        self.index: Dict[str, set] = {}
+        self.docmap: Dict[int, Dict] = {}
+
+    def __add_docment(self, doc_id: int, text: str):
+        text_tks = tokenize(text)
+        for tk in text_tks:
+            self.index.setdefault(tk, set()).add(doc_id)
+
+    def get_documents(self, term: str) -> List[int]:
+        term = term.lower()
+        doc_ids = self.index.get(term, set())
+        return sorted(doc_ids)
+
+    def search(self, tokens: List[str], max_results: int = 5) -> List[Dict]:
+        matching_docs = []
+        for token in tokens:
+            doc_ids = self.get_documents(token)
+            for id in doc_ids:
+                matching_docs.append(self.docmap.get(id))
+                if len(matching_docs) == max_results:
+                    return matching_docs
+        return matching_docs
+
+    def build(self):
+        movies = load_movies()
+        for movie in movies:
+            id = movie["id"]
+            title = movie["title"]
+            description = movie["description"]
+
+            self.__add_docment(id, text=f"{title} {description}")
+            self.docmap[id] = movie
+
+    def save(self):
+        if not os.path.exists(cache_dir):
+            os.mkdir(cache_dir)
+
+        with open(index_dir, "wb") as f:
+            dump(self.index, f)
+
+        with open(docmap_dir, "wb") as f:
+            dump(self.docmap, f)
+
+    def load(self):
+
+        if not os.path.exists(index_dir):
+            raise FileNotFoundError("Could not find ./cache/index.pkl")
+
+        if not os.path.exists(docmap_dir):
+            raise FileNotFoundError("Could not find ./cache/docmap.pkl")
+
+        with open(index_dir, "rb") as f:
+            self.index = load(f)
+
+        with open(docmap_dir, "rb") as f:
+            self.docmap = load(f)
