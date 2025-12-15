@@ -3,7 +3,6 @@
 import argparse
 from services.processing import search_field, tokenize
 from services.indexing import InvertedIndex
-import os
 
 
 def main() -> None:
@@ -20,6 +19,10 @@ def main() -> None:
         "search", help="Search movies using Inverted Index"
     )
     search_parser.add_argument("query", type=str, help="Search query")
+
+    tf_parser = subparsers.add_parser("tf", help="Search movies using TF-IDF")
+    tf_parser.add_argument("doc_id", type=int, help="Document id to search")
+    tf_parser.add_argument("term", type=str, help="Term to search")
 
     subparsers.add_parser("build", help="Build inverted indexes from movies list")
 
@@ -39,7 +42,7 @@ def main() -> None:
                 inverted_index.load()
             except FileNotFoundError as e:
                 print("Error:", e)
-                os.exit(1)
+                exit(1)
 
             tokens = tokenize(args.query)
             matching_docs = inverted_index.search(tokens)
@@ -49,6 +52,19 @@ def main() -> None:
             else:
                 for n, doc in enumerate(matching_docs):
                     print(f"{n+1}. {doc['id']} {doc['title']}")
+
+        case "tf":
+            inverted_index = InvertedIndex()
+            try:
+                inverted_index.load()
+            except FileNotFoundError as e:
+                print("Error:", e)
+                exit(1)
+
+            term_freq = inverted_index.get_tf(doc_id=args.doc_id, term=args.term)
+            print(
+                f"Term frequency for term {args.term} in document {args.doc_id}: {term_freq}"
+            )
 
         case "build":
             inverted_index = InvertedIndex()

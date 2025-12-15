@@ -2,6 +2,7 @@ from typing import Dict, List
 from services.processing import tokenize, load_movies
 from pickle import dump, load
 from dotenv import load_dotenv
+from collections import Counter
 import os
 
 load_dotenv()
@@ -9,17 +10,21 @@ load_dotenv()
 cache_dir = os.environ["CACHE_DIR"]
 index_dir = f"{cache_dir}/index.pkl"
 docmap_dir = f"{cache_dir}/docmap.pkl"
+tf_dir = f"{cache_dir}/term_frequencies.pkl"
 
 
 class InvertedIndex:
     def __init__(self):
         self.index: Dict[str, set] = {}
         self.docmap: Dict[int, Dict] = {}
+        self.term_frequencies: dict[int, Counter] = {}
 
-    def __add_docment(self, doc_id: int, text: str):
+    def __add_document(self, doc_id: int, text: str):
         text_tks = tokenize(text)
         for tk in text_tks:
             self.index.setdefault(tk, set()).add(doc_id)
+
+        self.term_frequencies[doc_id] = Counter(text_tks)
 
     def get_documents(self, term: str) -> List[int]:
         term = term.lower()
@@ -36,6 +41,15 @@ class InvertedIndex:
                     return matching_docs
         return matching_docs
 
+    def get_tf(self, doc_id: int, term: str) -> int:
+        tokens = tokenize(term)
+        if len(tokens) > 1:
+            raise ValueError("Token must be a single word!")
+
+        token = tokens[0]
+        doc_counter = self.term_frequencies.get(doc_id, Counter())
+        return doc_counter.get(token, 0)
+
     def build(self):
         movies = load_movies()
         for movie in movies:
@@ -43,7 +57,7 @@ class InvertedIndex:
             title = movie["title"]
             description = movie["description"]
 
-            self.__add_docment(id, text=f"{title} {description}")
+            self.__add_document(id, text=f"{title} {description}")
             self.docmap[id] = movie
 
     def save(self):
@@ -56,16 +70,25 @@ class InvertedIndex:
         with open(docmap_dir, "wb") as f:
             dump(self.docmap, f)
 
+        with open(tf_dir, "wb") as f:
+            dump(self.term_frequencies, f)
+
     def load(self):
 
         if not os.path.exists(index_dir):
-            raise FileNotFoundError("Could not find ./cache/index.pkl")
+            raise FileNotFoundError(f"Could not find {index_dir}")
 
         if not os.path.exists(docmap_dir):
-            raise FileNotFoundError("Could not find ./cache/docmap.pkl")
+            raise FileNotFoundError(f"Could not find {docmap_dir}")
+
+        if not os.path.exists(tf_dir):
+            raise FileNotFoundError(f"Could not find {tf_dir}")
 
         with open(index_dir, "rb") as f:
             self.index = load(f)
 
         with open(docmap_dir, "rb") as f:
             self.docmap = load(f)
+
+        with open(tf_dir, "rb") as f:
+            self.term_frequencies = load(f)

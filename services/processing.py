@@ -31,12 +31,10 @@ def load_file(file_path: str) -> List[str]:
 def search_field(field: str, query: str) -> List[dict]:
     map_list = load_movies()
     search_results = []
-    query = remove_punctuation(query)
     query_tks = tokenize(query)
 
     for hash_map in map_list:
-        value = remove_punctuation(hash_map.get(field, ""))
-        val_tks = tokenize(value)
+        val_tks = tokenize(hash_map.get(field, ""))
 
         for q_tk in query_tks:
             if q_tk in val_tks:
@@ -47,12 +45,12 @@ def search_field(field: str, query: str) -> List[dict]:
 
 
 def remove_punctuation(value: str) -> str:
-    value = value.lower()
     trans_table = str.maketrans("", "", punctuation)
     return value.translate(trans_table)
 
 
 def tokenize(value: str) -> List[str]:
+    value = remove_punctuation(value)
     tokens = value.split()
     removed = remove_stop_words(tokens)
     stemmed = stem(removed)
