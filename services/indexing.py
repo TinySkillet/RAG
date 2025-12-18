@@ -1,9 +1,7 @@
 import math
 import os
 from collections import Counter
-from doctest import DocFileSuite
 from pickle import dump, load
-from pydoc import doc
 from typing import Dict, List
 
 from dotenv import load_dotenv
