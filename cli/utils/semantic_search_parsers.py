@@ -20,3 +20,11 @@ def register_parsers(parser: argparse.ArgumentParser):
         "embedquery", help="Generate embeddings for query"
     )
     embed_query_parser.add_argument("query", type=str, help="The query to embed")
+
+    semantic_search_parser = subparsers.add_parser(
+        "search", help="Search movies using semantic search"
+    )
+    semantic_search_parser.add_argument("query", type=str, help="Text to search")
+    semantic_search_parser.add_argument(
+        "--limit", type=int, nargs="?", default=5, help="Max results"
+    )
