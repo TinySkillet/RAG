@@ -12,7 +12,7 @@ load_dotenv()
 
 cache_dir = os.environ["CACHE_DIR"]
 
-embedding_store_dir = f"{cache_dir}movie_embeddings.npy"
+embedding_store_dir = f"{cache_dir}/movie_embeddings.npy"
 
 
 class SemanticSearch:
@@ -37,12 +37,13 @@ class SemanticSearch:
         cos_similarities = dot_products / norms
         top_indices = np.argsort(cos_similarities)[::-1][:limit]
 
+        sorted_values = cos_similarities[top_indices]
         top_results = []
-        for idx in top_indices:
+        for idx, score in zip(top_indices, sorted_values):
             doc = self.documents[idx]
             top_results.append(
                 {
-                    "score": float(cos_similarities[idx]),
+                    "score": float(score),
                     "title": doc["title"],
                     "description": doc["description"],
                 }
